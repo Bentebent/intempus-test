@@ -1,9 +1,12 @@
-from config import Config
-import dotenv
 import logging
 import sys
 from typing import Optional
 
+import dotenv
+import uvicorn
+
+from api.main import create_api
+from config import Config
 
 
 def _get_config(logger: logging.Logger) -> Optional[Config]:
@@ -11,12 +14,17 @@ def _get_config(logger: logging.Logger) -> Optional[Config]:
         return Config()  # ty:ignore[missing-argument]
     except Exception:
         logger.error("Failed to load configuration", exc_info=True)
-        
+
     return None
 
 
-def main():
+def foo(config: Config, logger: logging.Logger) -> None:
+    app = create_api(config, logger)
     print("Hello from intempus-sync!")
+
+    uvicorn.run(
+        app, host="0.0.0.0", port=config.api_port
+    )
 
 
 if __name__ == "__main__":
@@ -31,5 +39,5 @@ if __name__ == "__main__":
     if not config:
         logger.error("Configuration incomplete or missing, exiting")
         sys.exit(1)
-
-    main()
+    else:
+        foo(config, logger)

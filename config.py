@@ -5,3 +5,4 @@ class Config(BaseSettings):
     intempus_api_user: str
     intempus_api_key: str
     db_name: str
+    api_port: int
