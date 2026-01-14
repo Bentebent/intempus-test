@@ -5,6 +5,13 @@ from pydantic import BaseModel
 
 
 class Meta(BaseModel):
+    """
+    Metadata for paginated list responses from the Intempus API.
+
+    See the official Intempus API documentation for the Case endpoint:
+    https://intempus.dk/web-doc/v1/#tag---Case
+    """
+
     limit: int
     next: Optional[str]
     offset: Optional[int]
@@ -13,6 +20,13 @@ class Meta(BaseModel):
 
 
 class CaseResponseDTO(BaseModel):
+    """
+    A full case respones from the Intempus API.
+
+    See the official Intempus API documentation for the Case endpoint:
+    https://intempus.dk/web-doc/v1/#tag---Case
+    """
+
     id: int
 
     responsible: Optional[str] = None
@@ -79,11 +93,25 @@ class CaseResponseDTO(BaseModel):
 
 
 class CaseQueryResponseDTO(BaseModel):
+    """
+    Grouped case query results from the Intempus API.
+
+    See the official Intempus API documentation for the Case endpoint:
+    https://intempus.dk/web-doc/v1/#tag---Case
+    """
+
     meta: Meta
     objects: list[CaseResponseDTO]
 
 
 class CaseBaseDTO(BaseModel):
+    """
+    Shared base for create and input data for the Intempus API.
+
+    See the official Intempus API documentation for the Case endpoint:
+    https://intempus.dk/web-doc/v1/#tag---Case
+    """
+
     responsible: Optional[str] = None
     co_responsible: Optional[str] = None
     case_state: Optional[str] = None
@@ -142,10 +170,24 @@ class CaseBaseDTO(BaseModel):
 
 
 class CaseCreateDTO(CaseBaseDTO):
+    """
+    Input creation data for case creation in the Intempus API.
+
+    See the official Intempus API documentation for the Case endpoint:
+    https://intempus.dk/web-doc/v1/#tag---Case
+    """
+
     customer: str
     number: str
     name: str
 
 
 class CaseUpdateDTO(CaseBaseDTO):
+    """
+    Input update data for case creation in the Intempus API.
+
+    See the official Intempus API documentation for the Case endpoint:
+    https://intempus.dk/web-doc/v1/#tag---Case
+    """
+
     pass
