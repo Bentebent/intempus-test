@@ -7,6 +7,11 @@ import uvicorn
 
 from api.main import create_api
 from config import Config
+from db.db_client import DBClient
+from intempus_synchronization_client import IntempusSynchronizer
+from shared.intempus_client import IntempusClient
+
+intempus_synchronization_client: IntempusSynchronizer | None = None
 
 
 def _get_config(logger: logging.Logger) -> Optional[Config]:
@@ -18,17 +23,17 @@ def _get_config(logger: logging.Logger) -> Optional[Config]:
     return None
 
 
-def foo(config: Config, logger: logging.Logger) -> None:
-    app = create_api(config, logger)
-    print("Hello from intempus-sync!")
+def main(config: Config, logger: logging.Logger) -> None:
+    app = create_api(logger)
 
-    uvicorn.run(
-        app, host="0.0.0.0", port=config.api_port
-    )
+    global intempus_synchronization_client
+    intempus_synchronization_client = IntempusSynchronizer(IntempusClient(config), DBClient(config), logger)
+
+    uvicorn.run(app, host="0.0.0.0", port=config.api_port)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("intempus_sync")
     logger.info("Initializing Intempus sync API")
 
@@ -40,4 +45,4 @@ if __name__ == "__main__":
         logger.error("Configuration incomplete or missing, exiting")
         sys.exit(1)
     else:
-        foo(config, logger)
+        main(config, logger)
