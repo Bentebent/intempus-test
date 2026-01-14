@@ -61,7 +61,6 @@ def test_insert_case_commit_failure(monkeypatch, get_config):
     def fail_commit(self):
         raise RuntimeError("Simulated DB commit failure")
 
-    # Patch commit method
     monkeypatch.setattr(Session, "commit", fail_commit)
 
     case = Case(
@@ -86,7 +85,6 @@ def test_sync_inserts_missing_case(db_client):
 
 
 def test_sync_updates_case_when_remote_newer(db_client):
-    # Existing local case
     db_client.insert_case(Case(id=1, logical_timestamp=5, blob='{"old": true}'))
 
     remote_pages = iter([make_page([make_case(1, 10)])])
@@ -113,11 +111,7 @@ def test_sync_noop_when_timestamps_equal(db_client):
 def test_sync_deletes_local_when_missing_remotely(db_client):
     db_client.insert_case(Case(id=1, logical_timestamp=10, blob="{}"))
 
-    remote_pages = iter(
-        [
-            make_page([])  # No remote cases
-        ]
-    )
+    remote_pages = iter([make_page([])])
 
     db_client.synchronize_with_intempus(remote_pages)
 
@@ -126,11 +120,9 @@ def test_sync_deletes_local_when_missing_remotely(db_client):
 
 
 def test_sync_mixed_operations(db_client):
-    # Local: 1, 2
     db_client.insert_case(Case(id=1, logical_timestamp=5, blob="{}"))
     db_client.insert_case(Case(id=2, logical_timestamp=10, blob="{}"))
 
-    # Remote: 1 (newer), 3 (new)
     remote_pages = iter(
         [
             make_page(
@@ -165,3 +157,26 @@ def test_sync_multiple_pages(db_client):
     with Session(db_client._engine) as session:
         ids = sorted(c.id for c in session.exec(select(Case)))  # ty:ignore[invalid-argument-type]
         assert ids == [1, 2]
+
+
+def huge_remote_generator(n):
+    for i in range(1, n + 1):
+        yield make_page([make_case(i, i)])
+
+@pytest.mark.slow
+def test_sync_million_pages_behavior(db_client):
+    N = 1_000_000
+
+    remote_pages = huge_remote_generator(N)
+
+    # Preload a small local dataset to force merge logic
+    db_client.insert_case(Case(id=500_000, logical_timestamp=1, blob="{}"))
+
+    db_client.synchronize_with_intempus(remote_pages)
+
+    # Verify only final DB state sanity, not full count
+    with Session(db_client._engine) as session:
+        # Spot-check boundaries
+        assert session.get(Case, 1) is not None
+        assert session.get(Case, 500_000).logical_timestamp == 500_000  # ty:ignore[possibly-missing-attribute]
+        assert session.get(Case, N) is not None
